@@ -1,0 +1,14 @@
+
+Hope you enjoy your new logo, here are the people that
+made your beautiful logo happen :)
+font name: OverpassMono-Bold
+font link: https://fonts.google.com/specimen/Overpass+Mono
+font author: Delve Withrington
+font author site: https://www.delvefonts.com/
+
+
+icon designer: roger castillejo olan
+icon designer link: /theramblas
+        
+{"bg":"#3D1240","icon":"#DDBA2E","font":"#DDBA2E","slogan":"#f1ce42"}
+      
