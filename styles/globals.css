@@ -20,4 +20,8 @@
         @apply text-center text-white uppercase text-sm pt-4
     }
 
+    .admin-button{
+        @apply bg-red-600 p-2 flex-1 rounded-md border-purple-600 border-2 hover:bg-indigo-600
+    }
+
 }

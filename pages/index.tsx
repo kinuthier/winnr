@@ -9,15 +9,18 @@ import {
 } from '@thirdweb-dev/react'
 import Login from '../components/Login'
 import Loading from './Loading'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ethers } from 'ethers'
 import { currency } from '../Constant'
 import CountdownTimer from '../components/CountdownTimer'
 import toast from 'react-hot-toast'
+import Marquee from 'react-fast-marquee'
+import AdminControls from '../components/AdminControls'
 
 const Home: NextPage = () => {
   const address = useAddress();
   const [ quantity, setQuantity] = useState<number>(1);
+  const [userTickets, setUserTickets] = useState(0);
   const { contract, isLoading } = useContract(
     process.env.NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS
   );
@@ -42,12 +45,43 @@ const Home: NextPage = () => {
     "ticketCommission"
   )
 
+  const {data: tickets} = useContractRead(contract, "getTickets")
+
   const { data:expiration } = useContractRead(
     contract,
     "expiration"
   )
 
+  const { mutateAsync: WithdrawWinnings } = useContractWrite(
+    contract,
+    "WithdrawWinnings"
+  )
+
   const { mutateAsync: BuyTickets } = useContractWrite(contract, "BuyTickets")
+
+  const  { data: winnings } = useContractRead(
+    contract,
+    "getWinningsForAddress",
+    address
+  );
+
+  const { data: lastWinner } = useContractRead (contract, "lastWinner");
+  const { data: lastWinnerAmount } = useContractRead (
+    contract,
+    "lastWinnerAmount"
+  );
+
+  useEffect(() => {
+    if(!tickets) return;
+
+    const totalTickets: string[] = tickets;
+
+    const noOfUserTickets = totalTickets.reduce((total, ticketAddress) => (
+      ticketAddress === address ? total + 1 :total
+    ), 0);
+    
+    setUserTickets(noOfUserTickets);
+  }, [tickets, address])
 
   const handleClick = async () => {
     if(!ticketPrice) return;
@@ -75,6 +109,29 @@ const Home: NextPage = () => {
     }
   }
 
+  const onWithdrawWinnings = async () => {
+    const notification = toast.loading("Withdrawing winnings...")
+
+    try{
+      const data = await WithdrawWinnings([{}])
+
+      toast.success("Winnings withdrawn successfully!", {
+        id:notification,
+      })
+    } catch(err) {
+      toast.error("Whoops something went wrong!", {
+        id: notification,
+      });
+
+      console.error("Contract call failure", err); 
+    }
+  }
+
+  const { data:isLotteryOperator } = useContractRead(
+    contract,
+    "lotteryOperator"
+  );
+
   if (isLoading) return <Loading/>
   if (!address) return <Login />;
 
@@ -86,6 +143,41 @@ const Home: NextPage = () => {
 
       <div className='flex-1'>
       <Header/>
+
+      <Marquee className='bg-yellow-400 p-5 mb-5' gradient={false} speed={100}>
+        <div className='flex space-x-1 mx-10'>
+          <h4 className='text-purple-800 font-bold'> Last Winner: {lastWinner?.toString()}</h4>
+          <h4 className='text-purple-800 font-bold'>Previous Winnings: 
+          {lastWinnerAmount &&
+            ethers.utils.formatEther(lastWinnerAmount?.toString())
+          } {""}
+          {currency}
+          </h4>
+        </div>
+      </Marquee>
+
+      {isLotteryOperator === address && (
+        <div className='flex justify-center'>
+          <AdminControls/>
+        </div>
+      ) }
+
+
+      {winnings > 0 && (
+        <div className='max-w-md md:max-w-2xl lg:max-w-4xl mx-auto mt-5'>
+          <button onClick={onWithdrawWinnings} className='p-5 bg-gradient-to-b from-yellow-500 to-green-600 animate-pulse text-center rounded-xl w-full'>
+            <p className='font-bold'>Winner Winner Chicken Dinner!!!</p>
+            <p>Total Winnings: {ethers.utils.formatEther(winnings.
+              toString())} {""}
+              {currency}
+            </p>
+            <br/>
+            <p className='font-semibold'>Click here to Withdraw</p>
+          </button>
+        </div>
+      )}
+
+      {/**Next draw */}
       <div className='space-y-5 md:space-y-0 md:flex md:flex-row items-start justify-center max-w-screen-6xl md:space-x-5'>
         <div className='stats-container'>
           <h1 className='text-5xl text-white font-semibold text-center'>
@@ -163,19 +255,44 @@ const Home: NextPage = () => {
           <button disabled={expiration?.toString < Date.now().toString() || remainingTickets?. toNumber() === 0}
           onClick={handleClick}
           className='mt-5 w-full bg-gradient-to-br from-yellow-500 
-          to-yellow-300 px-10 py-5 rounded-md text-white shadow-xl 
+          to-yellow-300 px-10 py-5 rounded-md font-semibold text-white shadow-xl 
           disabled: from-gray-600 disabled: text-gray-100
           disabled: to-gray-500 disabled: cursor-not-allowed'>
-            Buy Tickets
+            Buy {quantity} Tickets for {ticketPrice && 
+             Number(ethers.utils.formatEther(ticketPrice.toString())
+             ) * quantity}{" "}
+            {currency}
           </button>
         </div>
+
+        {userTickets >0 && (
+          <div className='stats'>
+            <p className='text-lg mb-2'>You have {userTickets} in this Draw</p>
+
+            <div className='flex max-w-sm flex-wrap gap-x-2 gap-y-2'>
+              {Array(userTickets).fill("").map((_, index) => (
+                <p className='text-yellow-900 h-20 w-12 
+                bg-yellow-400 rounded-lg flex flex-shrink-0
+                items-center justify-center text-xs italic'
+                >
+                  {index + 1}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       </div>
       </div>
 
       <div>
-        //
       </div>
+      <footer>
+        <img src="" alt="" />
+        <p>
+          Footer
+        </p>
+      </footer>
     </div>
   )
 }
