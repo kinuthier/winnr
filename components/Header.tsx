@@ -1,6 +1,4 @@
 import React from 'react'
-import Image from 'next/image'
-import img1 from '../image/logo png.png'
 import NavButton from './NavButton'
 import { Bars3BottomRightIcon } from '@heroicons/react/24/solid/'
 import { useAddress, useDisconnect } from '@thirdweb-dev/react'
@@ -12,10 +10,11 @@ function Header() {
   return (
    <header className='grid grid-cols-2 md:grid-cols-5 justify-between items-center p-5'>    
         <div className='flex items-center space-x-2 h-1 w-45'>   
-            <Image height={0} width={0}
-             className='rounded-full h-18 w-18'
-             src={img1}
-             alt='winnr'/>
+        <img 
+         className='rounded-full h-20 w-20'
+         src="https://imgur.com/NgH7yUm.png" 
+         alt="" 
+         />
         <div>
             <h1 className='text-lg text-yellow-600 font-bold'>WINNR DRAW</h1>
             <p className='text-xs text-yellow-400 truncate'>User: {address?.substring(0,6)}...{address?.substring(address.length, address.length - 6)}</p>
